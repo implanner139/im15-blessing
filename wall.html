@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PRAI5E 祝福牆</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=Noto+Sans+TC:wght@400;500&family=Noto+Serif+TC:wght@600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #BCA891; --green: #2C663A; --orange: #E95B21; --cream: #F4ECE3; --ink: #3A3027; --brown: #5B4636;
+    --serif: 'Noto Serif TC', serif; --sans: 'Noto Sans TC', sans-serif; --latin: 'Jost', sans-serif;
+  }
+  html, body { margin: 0; height: 100%; background: #1b1714; overflow: hidden; }
+  body.idle { cursor: none; }
+  #stage {
+    position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: center center; transform: translate(-50%, -50%);
+    background: var(--paper) url(assets/wall_bg.jpg) center / cover; overflow: hidden; color: var(--ink);
+  }
+  .blob { position: absolute; border-radius: 50%; background: var(--orange); filter: blur(90px); opacity: .62; pointer-events: none; }
+  .blob.a { width: 760px; height: 300px; top: -150px; right: 180px; }
+  .blob.b { width: 900px; height: 420px; bottom: -250px; left: -340px; opacity: .5; }
+  .breathe { animation: breathe 14s ease-in-out infinite alternate; }
+  @keyframes breathe { to { transform: translate(40px, 20px) scale(1.08); } }
+
+  /* 抬頭 */
+  .top { position: absolute; left: 90px; right: 90px; top: 52px; display: flex; align-items: flex-end; justify-content: space-between; z-index: 3; }
+  .brand { display: flex; align-items: flex-end; gap: 34px; }
+  .brand img { height: 92px; display: block; }
+  .brand .t { color: var(--cream); font-size: 26px; letter-spacing: .55em; padding-bottom: 8px; }
+  .brand .t small { display: block; font-family: var(--latin); font-weight: 300; font-size: 22px; letter-spacing: .04em; margin-top: 6px; }
+  .counter { text-align: right; font-family: var(--serif); color: var(--green); padding-bottom: 4px; }
+  .counter .lab { font-size: 26px; font-weight: 600; letter-spacing: .12em; }
+  .counter .n { font-family: var(--latin); font-weight: 500; font-size: 84px; line-height: 1; margin: 0 10px; display: inline-block; min-width: 1.2em; text-align: center; color: var(--orange); }
+  .counter .n.tick { animation: tick .7s ease; }
+  @keyframes tick { 30% { transform: scale(1.25); } }
+
+  /* 文字雲 */
+  #cloud { position: absolute; inset: 0; z-index: 2; transition: opacity .8s, filter .8s; }
+  #cloud.dim { opacity: .38; filter: blur(1.5px); }
+  .w {
+    position: absolute; white-space: nowrap; font-family: var(--serif); font-weight: 700; line-height: 1;
+    transition: left 1.6s cubic-bezier(.3,.8,.25,1), top 1.6s cubic-bezier(.3,.8,.25,1), font-size 1.6s cubic-bezier(.3,.8,.25,1), color 1.2s, opacity 1.2s;
+    opacity: 0; will-change: left, top;
+  }
+  .w.in { opacity: 1; }
+  .w.v { writing-mode: vertical-rl; letter-spacing: .02em; }
+  .w > span { display: inline-block; animation: bob var(--d, 7s) ease-in-out var(--dl, 0s) infinite alternate; }
+  @keyframes bob { from { transform: translateY(-5px); } to { transform: translateY(5px); } }
+  .w.pulse > span { animation: pulse 1.6s ease; }
+  @keyframes pulse { 0% { transform: scale(1); } 25% { transform: scale(1.28); text-shadow: 0 0 30px rgba(244,236,227,.95); } 100% { transform: scale(1); } }
+
+  /* 新祝福卡 */
+  #card {
+    position: absolute; z-index: 5; left: 50%; top: 52%; width: max-content; max-width: 1260px;
+    transform: translate(-50%, -50%) scale(.7); opacity: 0; pointer-events: none;
+    background: rgba(244,236,227,.94); border-radius: 36px; padding: 58px 86px 54px;
+    box-shadow: 0 30px 80px -30px rgba(58,48,39,.6);
+    transition: transform .9s cubic-bezier(.2,1.2,.3,1), opacity .6s;
+  }
+  #card.show { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+  #card.leave { transition: transform .95s cubic-bezier(.6,0,.4,1), opacity .9s ease; opacity: 0; }
+  #card .q { position: absolute; font-family: var(--serif); font-weight: 900; color: var(--orange); font-size: 150px; line-height: 1; }
+  #card .q.l { left: 26px; top: -14px; } #card .q.r { right: 30px; bottom: -86px; }
+  #card .m { text-wrap: balance; font-family: var(--serif); font-weight: 700; color: var(--green); font-size: 66px; line-height: 1.45; letter-spacing: .03em; text-align: center; }
+  #card .m.long { font-size: 54px; }
+  #card .tags { margin-top: 22px; text-align: center; }
+  #card .tags span { display: inline-block; font-size: 26px; color: var(--orange); border: 2px solid rgba(233,91,33,.55); border-radius: 99px; padding: 4px 20px; margin: 0 6px; font-family: var(--sans); font-weight: 500; }
+  #card .deco { position: absolute; width: 150px; height: 150px; right: -58px; top: -64px; }
+
+  .seedfly { position: absolute; z-index: 6; width: 40px; height: 78px; pointer-events: none; }
+  .spark { position: absolute; z-index: 4; width: 22px; height: 42px; pointer-events: none; animation: spark 2.2s ease-out forwards; }
+  @keyframes spark { to { transform: translate(var(--dx), var(--dy)) rotate(var(--r)); opacity: 0; } }
+  .drifter { position: absolute; z-index: 1; width: 30px; height: 58px; opacity: .85; pointer-events: none; animation: drifter linear forwards; }
+  @keyframes drifter { from { transform: translate(0, 0) rotate(var(--r0)); } to { transform: translate(var(--dx), var(--dy)) rotate(var(--r1)); } }
+
+  /* QR */
+  .qr { position: absolute; z-index: 3; right: 64px; bottom: 56px; width: 248px; background: var(--cream); border-radius: 26px; padding: 20px 20px 16px; text-align: center; box-shadow: 0 18px 40px -22px rgba(58,48,39,.7); transition: opacity .5s; }
+  .qr.off { opacity: 0; }
+  .qr .code svg { width: 208px; height: 208px; display: block; }
+  .qr .cap { font-family: var(--serif); font-weight: 700; color: var(--green); font-size: 25px; margin-top: 10px; letter-spacing: .1em; }
+  .qr .cap small { display: block; font-family: var(--sans); font-weight: 400; font-size: 17px; color: var(--brown); letter-spacing: .04em; margin-top: 2px; }
+  .verse { position: absolute; z-index: 3; left: 90px; bottom: 60px; color: var(--cream); font-family: var(--latin); font-weight: 300; font-size: 25px; line-height: 1.45; }
+  .verse b { font-weight: 500; }
+  .status { position: absolute; z-index: 3; left: 18px; bottom: 16px; width: 9px; height: 9px; border-radius: 50%; background: #8a8; opacity: .5; }
+  .status.bad { background: #c33; opacity: .9; }
+  .demo { position: absolute; z-index: 9; left: 50%; top: 14px; transform: translateX(-50%); background: var(--ink); color: #fff; font: 18px var(--sans); padding: 6px 18px; border-radius: 99px; opacity: .8; }
+  .help { position: fixed; z-index: 99; right: 14px; top: 14px; background: rgba(0,0,0,.72); color: #fff; font: 14px/1.7 var(--sans); padding: 10px 14px; border-radius: 10px; display: none; }
+  .help.on { display: block; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="blob a breathe"></div>
+  <div class="blob b breathe" style="animation-delay:-7s"></div>
+  <div id="drift"></div>
+
+  <div class="top">
+    <div class="brand">
+      <img src="assets/wordmark.png" alt="PRAI5E!">
+      <div class="t">拾伍週年<small>iM Church 15th Anniversary</small></div>
+    </div>
+    <div class="counter"><span class="lab">已收到</span><span class="n" id="count">0</span><span class="lab">則祝福</span></div>
+  </div>
+
+  <div id="cloud"></div>
+
+  <div id="card"><span class="q l">“</span><div class="m" id="card-m"></div><div class="tags" id="card-t"></div><span class="q r">”</span><div class="deco" id="card-deco"></div></div>
+
+  <div class="verse">One generation commends your works to another;<br>they tell of your mighty acts. <b>Psalm 145:4</b></div>
+  <div class="qr" id="qr"><div class="code" id="qrcode"></div><div class="cap">掃描送上祝福<small>寫下你給 iM 的一句話</small></div></div>
+  <div class="status" id="status"></div>
+</div>
+<div class="help" id="help">F 全螢幕　Q 顯示/隱藏 QR Code　空白鍵 暫停/繼續　H 關閉說明</div>
+
+<script src="config.js"></script>
+<script src="shared.js"></script>
+<script src="assets/qrcode.min.js"></script>
+<script>
+(function () {
+  const C = Object.assign({ FILL_UNTIL: 50, IDLE_SECONDS: 9, POLL_SECONDS: 6 }, window.IM15 || {});
+  const DEMO = !C.SCRIPT_URL;
+  const W = 1920, H = 1080;
+  const stage = document.getElementById('stage'), cloudEl = document.getElementById('cloud');
+  const params = new URLSearchParams(location.search);
+  const STORE = 'im15-wall-v1' + (window.IM15 && window.IM15.SCRIPT_URL ? '' : '-demo');
+  if (params.has('reset') || STORE.endsWith('-demo')) { try { localStorage.removeItem(STORE); } catch (e) {} history.replaceState(null, '', location.pathname); }
+
+  // ---------- 版面縮放 ----------
+  function fit() {
+    const s = Math.min(innerWidth / W, innerHeight / H);
+    stage.style.transform = `translate(-50%, -50%) scale(${s})`;
+  }
+  addEventListener('resize', fit); fit();
+
+  // ---------- QR ----------
+  const formUrl = C.FORM_URL || new URL('./', location.href).href;
+  try {
+    const qr = qrcode(0, 'M'); qr.addData(formUrl); qr.make();
+    document.getElementById('qrcode').innerHTML = qr.createSvgTag({ cellSize: 6, margin: 0, scalable: true }).replace(/fill="black"/g, 'fill="#22352A"').replace(/fill="white"/g, 'fill="#F4ECE3"');
+  } catch (e) { console.warn(e); }
+
+  // ---------- 文字雲資料 ----------
+  const AMBIENT = ['平安', '祝福', '感謝', '同行', '讚美', '哈利路亞', '生命', '信心', '小家', '主日', '敬拜', '家人', '以馬內利', '同心', '一代傳一代', 'Praise', 'iM', '15', '恩典夠用', '新的開始'];
+  const VOCAB = ['恩典', '家', '感恩', '信實', '陪伴', '喜樂', '盼望', '愛', '成長', '開花', '生日快樂', '謝謝你', '我愛這個家', '辛苦了', '一起走下一個15年'];
+  const words = new Map(); // text -> {w, base, el, x, y, fs, v, color}
+  const rnd = (a, b) => a + Math.random() * (b - a);
+  function ensure(t, base) {
+    if (!words.has(t)) words.set(t, { t, w: 0, base: base || 0, amb: rnd(26, 38) });
+    return words.get(t);
+  }
+  AMBIENT.forEach(t => ensure(t, 1));
+  VOCAB.forEach(t => ensure(t, 1.2));
+
+  function tagsOf(item) {
+    const set = new Set((item.tags || []).map(s => String(s).replace(/\s+/g, '')).filter(Boolean));
+    VOCAB.forEach(v => { if ((item.msg || '').includes(v)) set.add(v); });
+    return Array.from(set).filter(t => t.length <= 12);
+  }
+  function addWeight(item, sign) { tagsOf(item).forEach(t => { const o = ensure(t); o.w = Math.max(0, o.w + sign); }); }
+
+  // ---------- 排版 ----------
+  const ctx = document.createElement('canvas').getContext('2d');
+  const OBST = [{ x: 60, y: 30, w: 1800, h: 150 }, { x: 1640, y: 760, w: 300, h: 330 }, { x: 60, y: 960, w: 820, h: 120 }];
+  const AREA = { x: 80, y: 190, w: 1760, h: 780 };
+  const CX = 940, CY = 575;
+  const PALETTE = ['#2C663A', '#E95B21', '#5B4636', '#2C663A', '#B8481A', '#3E7A4C'];
+  function sizeOf(o, scale) {
+    const score = o.w + o.base;
+    if (o.w <= 0) return o.amb * scale;
+    return Math.min(170, 40 + 28 * Math.log2(1 + score)) * scale;
+  }
+  function measure(o, fs) {
+    ctx.font = `700 ${fs}px "Noto Serif TC"`;
+    const tw = ctx.measureText(o.t).width;
+    return o.v ? { w: fs * 1.08, h: tw * 1.02 } : { w: tw, h: fs * 1.18 };
+  }
+  const hit = (a, b, p) => a.x < b.x + b.w + p && a.x + a.w + p > b.x && a.y < b.y + b.h + p && a.y + a.h + p > b.y;
+  function inside(r) { return r.x >= AREA.x && r.y >= AREA.y && r.x + r.w <= AREA.x + AREA.w && r.y + r.h <= AREA.y + AREA.h; }
+
+  function layout() {
+    const list = Array.from(words.values()).sort((a, b) => (b.w + b.base) - (a.w + a.base) || a.t.localeCompare(b.t)).slice(0, 72);
+    const keep = new Set(list.map(o => o.t));
+    list.forEach((o, i) => {
+      if (o.v === undefined) o.v = o.w <= 0 && /^[一-鿿]{2,4}$/.test(o.t) && Math.random() < .2;
+      if (i < 5) o.v = false;
+    });
+    let scale = 1, placed;
+    for (let tries = 0; tries < 8; tries++) {
+      placed = []; let failed = 0;
+      for (const o of list) {
+        const fs = sizeOf(o, scale), m = measure(o, fs);
+        let spot = null;
+        if (o.x != null) { // 優先留在原位，畫面才不會一直大搬家
+          const r = { x: o.x - m.w / 2, y: o.y - m.h / 2, w: m.w, h: m.h };
+          if (inside(r) && !placed.some(p => hit(r, p, 10)) && !OBST.some(b => hit(r, b, 0))) spot = r;
+        }
+        for (let t = 0; !spot && t < 1600; t += 0.35) {
+          const rr = 5.2 * t, x = CX + rr * Math.cos(t) * 1.9 - m.w / 2, y = CY + rr * Math.sin(t) * .92 - m.h / 2;
+          const r = { x, y, w: m.w, h: m.h };
+          if (!inside(r) || OBST.some(b => hit(r, b, 0)) || placed.some(p => hit(r, p, 10))) continue;
+          spot = r;
+        }
+        if (!spot) { failed++; o._skip = true; continue; }
+        o._skip = false; o._fs = fs; o._r = spot; placed.push(spot);
+      }
+      if (failed <= Math.max(2, list.length * .06)) break;
+      scale *= .9;
+      list.forEach(o => { o.x = null; }); // 縮小後整體重排
+    }
+    // 繪製
+    let rank = 0;
+    list.forEach(o => {
+      if (o._skip) { if (o.el) o.el.classList.remove('in'); return; }
+      o.x = o._r.x + o._r.w / 2; o.y = o._r.y + o._r.h / 2;
+      if (!o.el) {
+        o.el = document.createElement('div'); o.el.className = 'w';
+        o.el.innerHTML = '<span></span>'; o.el.firstChild.textContent = o.t;
+        o.el.firstChild.style.setProperty('--d', rnd(5, 9) + 's');
+        o.el.firstChild.style.setProperty('--dl', -rnd(0, 8) + 's');
+        o.el.style.left = o._r.x + 'px'; o.el.style.top = o._r.y + 'px'; o.el.style.fontSize = o._fs + 'px';
+        cloudEl.appendChild(o.el);
+        requestAnimationFrame(() => requestAnimationFrame(() => o.el.classList.add('in')));
+      }
+      o.el.classList.toggle('v', !!o.v);
+      o.el.style.left = o._r.x + 'px'; o.el.style.top = o._r.y + 'px'; o.el.style.fontSize = o._fs + 'px';
+      const hot = o.w > 0;
+      o.el.style.color = hot ? (rank < 3 ? '#2C663A' : PALETTE[rank % PALETTE.length]) : 'rgba(91,70,54,.62)';
+      if (hot) rank++;
+      o.el.classList.add('in');
+    });
+    words.forEach(o => { if (!keep.has(o.t) && o.el) o.el.classList.remove('in'); });
+  }
+  let layoutTimer = null;
+  const relayout = () => { clearTimeout(layoutTimer); layoutTimer = setTimeout(layout, 60); };
+
+  // ---------- 計數 ----------
+  let shown = 0;
+  const countEl = document.getElementById('count');
+  function setCount(n, anim) {
+    shown = n; countEl.textContent = n;
+    if (anim) { countEl.classList.remove('tick'); void countEl.offsetWidth; countEl.classList.add('tick'); }
+  }
+
+  // ---------- 狀態 ----------
+  let saved = { fillUsed: [], seen: [] };
+  try { saved = Object.assign(saved, JSON.parse(localStorage.getItem(STORE) || '{}')); } catch (e) {}
+  const persist = () => { try { localStorage.setItem(STORE, JSON.stringify(saved)); } catch (e) {} };
+  const real = new Map();   // id -> item（目前可見的真實祝福）
+  let fill = [];            // 補位清單
+  const queue = [];
+  let busy = false, paused = false, lastEnd = Date.now(), firstLoad = true;
+
+  function realCount() { return real.size; }
+  function total() { return realCount() + saved.fillUsed.length; }
+
+  // ---------- 資料 ----------
+  async function load() {
+    if (DEMO) return demoData();
+    const res = await fetch(C.SCRIPT_URL + (C.SCRIPT_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
+    return res.json();
+  }
+  async function poll() {
+    try {
+      const data = await load();
+      document.getElementById('status').classList.remove('bad');
+      if (!data || !data.ok) throw new Error('bad');
+      fill = data.fill || fill;
+      const ids = new Set(data.items.map(i => i.id));
+      // 被工作人員隱藏的：拿掉
+      Array.from(real.keys()).forEach(id => { if (!ids.has(id)) { addWeight(real.get(id), -1); real.delete(id); relayout(); } });
+      data.items.forEach(item => {
+        if (real.has(item.id)) return;
+        real.set(item.id, item);
+        const seenBefore = saved.seen.includes(item.id);
+        if (firstLoad || seenBefore) { addWeight(item, 1); }
+        else queue.push({ item, kind: 'real' });
+        if (!seenBefore) { saved.seen.push(item.id); }
+      });
+      // 已用過的補位：放回雲裡
+      if (firstLoad) {
+        saved.fillUsed.forEach(id => { const f = fill.find(x => x.id === id); if (f) addWeight(f, 1); });
+        // 第一次開啟：先安靜放幾則，畫面不會空空的
+        if (!saved.fillUsed.length && realCount() < C.FILL_UNTIL) {
+          shuffle(fill.slice()).slice(0, 10).forEach(f => { saved.fillUsed.push(f.id); addWeight(f, 1); });
+        }
+        setCount(total());
+        layout();
+        firstLoad = false;
+      }
+      persist();
+    } catch (e) {
+      document.getElementById('status').classList.add('bad');
+      if (firstLoad) { layout(); firstLoad = false; }
+    }
+  }
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+
+  // ---------- 空檔：補位或重播 ----------
+  function tickIdle() {
+    if (busy || paused || queue.length || firstLoad) return;
+    if (Date.now() - lastEnd < C.IDLE_SECONDS * 1000) return;
+    const unused = fill.filter(f => !saved.fillUsed.includes(f.id));
+    if (realCount() < C.FILL_UNTIL && unused.length) {
+      const f = unused[Math.floor(Math.random() * unused.length)];
+      queue.push({ item: f, kind: 'fill' });
+    } else {
+      const pool = realCount() ? Array.from(real.values()) : fill.filter(f => saved.fillUsed.includes(f.id));
+      if (pool.length) queue.push({ item: pool[Math.floor(Math.random() * pool.length)], kind: 'replay' });
+      else lastEnd = Date.now();
+    }
+  }
+
+  // ---------- 一則祝福進場 ----------
+  const card = document.getElementById('card'), cardM = document.getElementById('card-m'), cardT = document.getElementById('card-t');
+  document.getElementById('card-deco').innerHTML = IM15Art.dandelion({ stems: 12, color: '#E95B21', heart: '#F4ECE3', star: '#2C663A' });
+  const wait = ms => new Promise(r => setTimeout(r, ms));
+  const easeInOut = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+
+  function flySeed(from, to, ms) {
+    return new Promise(res => {
+      const s = document.createElement('div'); s.className = 'seedfly'; s.innerHTML = IM15Art.seed('#F4ECE3');
+      stage.appendChild(s);
+      const t0 = performance.now(), wob = rnd(40, 90), rot0 = rnd(-40, 40);
+      (function step(now) {
+        const k = Math.min(1, (now - t0) / ms), e = easeInOut(k);
+        const x = from.x + (to.x - from.x) * e + Math.sin(k * Math.PI * 2.2) * wob * (1 - k);
+        const y = from.y + (to.y - from.y) * e + Math.cos(k * Math.PI * 1.6) * wob * .5 * (1 - k);
+        s.style.transform = `translate(${x - 20}px, ${y - 39}px) rotate(${rot0 * (1 - k) + Math.sin(now / 300) * 12}deg)`;
+        s.style.opacity = k > .85 ? (1 - (k - .85) / .15) : 1;
+        if (k < 1) requestAnimationFrame(step); else { s.remove(); res(); }
+      })(t0);
+    });
+  }
+  function burst(x, y, n) {
+    for (let i = 0; i < n; i++) {
+      const s = document.createElement('div'); s.className = 'spark'; s.innerHTML = IM15Art.seed(i % 3 ? '#F4ECE3' : '#E95B21');
+      const a = rnd(0, Math.PI * 2), d = rnd(70, 170);
+      s.style.left = (x - 11) + 'px'; s.style.top = (y - 21) + 'px';
+      s.style.setProperty('--dx', Math.cos(a) * d + 'px'); s.style.setProperty('--dy', Math.sin(a) * d - 40 + 'px'); s.style.setProperty('--r', rnd(-120, 120) + 'deg');
+      stage.appendChild(s); setTimeout(() => s.remove(), 2400);
+    }
+  }
+
+  async function present(job) {
+    busy = true;
+    const { item, kind } = job;
+    const tags = tagsOf(item);
+    // 1. 種子從畫面邊緣飄進來
+    const edge = Math.floor(Math.random() * 3);
+    const from = edge === 0 ? { x: -60, y: rnd(300, 900) } : edge === 1 ? { x: W + 60, y: rnd(300, 700) } : { x: rnd(300, 1500), y: H + 80 };
+    await flySeed(from, { x: W / 2, y: H * .52 }, 1500);
+    // 2. 卡片打開
+    cardM.textContent = item.msg || tags.join('、');
+    cardM.classList.toggle('long', (item.msg || '').length > 22);
+    cardT.innerHTML = '';
+    tags.filter(t => t !== item.msg).slice(0, 4).forEach(t => { const s = document.createElement('span'); s.textContent = t; cardT.appendChild(s); });
+    card.style.transition = ''; card.classList.remove('leave');
+    card.style.transform = '';
+    cloudEl.classList.add('dim');
+    card.classList.add('show');
+    burst(W / 2, H * .52, 10);
+    const len = (item.msg || '').length;
+    let hold = Math.min(7500, 3600 + len * 90);
+    if (queue.length > 2) hold = Math.min(hold, 3400);
+    await wait(hold);
+    // 3. 卡片縮小飛向文字雲裡對應的詞
+    if (kind !== 'replay') {
+      addWeight(item, 1);
+      if (kind === 'fill') saved.fillUsed.push(item.id);
+      persist();
+    }
+    const target = tags.map(t => words.get(t)).find(o => o && o.el && o.x != null) || null;
+    const tx = target ? target.x : CX, ty = target ? target.y : CY;
+    card.classList.add('leave');
+    card.style.transform = `translate(calc(-50% + ${tx - W / 2}px), calc(-50% + ${ty - H * .52}px)) scale(.08)`;
+    cloudEl.classList.remove('dim');
+    await wait(700);
+    card.classList.remove('show');
+    if (kind !== 'replay') { setCount(total(), true); layout(); }
+    await wait(250);
+    tags.forEach(t => { const o = words.get(t); if (o && o.el) { o.el.classList.remove('pulse'); void o.el.offsetWidth; o.el.classList.add('pulse'); } });
+    const tgt = tags.map(t => words.get(t)).find(o => o && o.x != null);
+    if (tgt) burst(tgt.x, tgt.y, 9);
+    await wait(1400);
+    card.style.transition = 'none'; card.classList.remove('leave'); card.style.transform = '';
+    lastEnd = Date.now();
+    busy = false;
+  }
+  setInterval(() => { tickIdle(); if (!busy && !paused && queue.length) present(queue.shift()); }, 500);
+
+  // ---------- 背景飄種子 ----------
+  const drift = document.getElementById('drift');
+  function ambientSeed() {
+    const s = document.createElement('div'); s.className = 'drifter'; s.innerHTML = IM15Art.seed('#F4ECE3');
+    const dur = rnd(18, 30);
+    s.style.left = rnd(100, 1700) + 'px'; s.style.top = (H + 40) + 'px';
+    s.style.setProperty('--dx', rnd(-200, 500) + 'px'); s.style.setProperty('--dy', -(H + 200) + 'px');
+    s.style.setProperty('--r0', rnd(-30, 30) + 'deg'); s.style.setProperty('--r1', rnd(-120, 160) + 'deg');
+    s.style.animationDuration = dur + 's'; s.style.opacity = rnd(.35, .8);
+    s.style.transform = `scale(${rnd(.6, 1.1)})`;
+    drift.appendChild(s); setTimeout(() => s.remove(), dur * 1000 + 500);
+  }
+  setInterval(ambientSeed, 2600); for (let i = 0; i < 3; i++) setTimeout(ambientSeed, i * 900);
+
+  // ---------- 操作 ----------
+  const help = document.getElementById('help');
+  addEventListener('keydown', e => {
+    const k = e.key.toLowerCase();
+    if (k === 'f') { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }
+    if (k === 'q') document.getElementById('qr').classList.toggle('off');
+    if (k === ' ') { paused = !paused; e.preventDefault(); }
+    if (k === 'h' || k === '?') help.classList.toggle('on');
+  });
+  let idleT; addEventListener('mousemove', () => { document.body.classList.remove('idle'); clearTimeout(idleT); idleT = setTimeout(() => document.body.classList.add('idle'), 2500); });
+
+  // ---------- 示範模式 ----------
+  let demoItems = [], demoN = 0;
+  const DEMO_FILL = [
+    ['（示範）生日快樂！', '生日快樂'], ['（示範）謝謝這個家', '家、謝謝你'], ['（示範）感謝主', '感恩'], ['（示範）辛苦了大家', '辛苦了'],
+    ['（示範）一路都是恩典', '恩典'], ['（示範）一起走下去', '一起走下一個15年'], ['（示範）愛你們', '愛'], ['（示範）期待下一個15年', '盼望'],
+    ['（示範）好開心', '喜樂'], ['（示範）謝謝小家', '陪伴'], ['（示範）神真好', '信實'], ['（示範）繼續長大', '成長'],
+  ].map((r, i) => ({ id: 'f' + i, msg: r[0], tags: r[1].split('、') }));
+  const DEMO_REAL = [
+    ['（示範）iM 生日快樂！謝謝這個家一直都在', ['恩典', '生日快樂']], ['（示範）謝謝松牧師和所有同工，辛苦了！', ['陪伴', '辛苦了']],
+    ['', ['家', '我愛這個家']], ['（示範）下一個 15 年，我們也要一起走', ['盼望', '一起走下一個15年']],
+  ];
+  function demoData() {
+    if (!firstLoad && demoN < DEMO_REAL.length && Math.random() < .5) {
+      const r = DEMO_REAL[demoN++]; demoItems.push({ id: 'd' + demoN, msg: r[0], tags: r[1] });
+    }
+    return Promise.resolve({ ok: true, items: demoItems.slice(), fill: DEMO_FILL });
+  }
+  if (DEMO) {
+    const d = document.createElement('div'); d.className = 'demo'; d.textContent = '示範模式：尚未連接試算表（按 H 看操作說明）'; stage.appendChild(d);
+    C.IDLE_SECONDS = Math.min(C.IDLE_SECONDS, 4);
+  }
+
+  // ---------- 開始 ----------
+  if (document.fonts) document.fonts.addEventListener('loadingdone', relayout);
+  const warm = AMBIENT.concat(VOCAB).join('') + '已收到則祝福掃描送上';
+  (document.fonts ? document.fonts.load('700 40px "Noto Serif TC"', warm).catch(() => {}) : Promise.resolve()).then(() => {
+    poll();
+    setInterval(poll, C.POLL_SECONDS * 1000);
+  });
+})();
+</script>
+</body>
+</html>
