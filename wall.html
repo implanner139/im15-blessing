@@ -65,6 +65,8 @@
   #card .q.l { left: 26px; top: -14px; } #card .q.r { right: 30px; bottom: -86px; }
   #card .m { text-wrap: balance; font-family: var(--serif); font-weight: 700; color: var(--green); font-size: 66px; line-height: 1.45; letter-spacing: .03em; text-align: center; }
   #card .m.long { font-size: 54px; }
+  #card .who { margin-top: 18px; text-align: center; font-family: var(--sans); font-weight: 500; font-size: 32px; color: var(--brown); letter-spacing: .08em; }
+  #card .who:empty { display: none; }
   #card .tags { margin-top: 22px; text-align: center; }
   #card .tags span { display: inline-block; font-size: 26px; color: var(--orange); border: 2px solid rgba(233,91,33,.55); border-radius: 99px; padding: 4px 20px; margin: 0 6px; font-family: var(--sans); font-weight: 500; }
   #card .deco { position: absolute; width: 150px; height: 150px; right: -58px; top: -64px; }
@@ -106,7 +108,7 @@
 
   <div id="cloud"></div>
 
-  <div id="card"><span class="q l">“</span><div class="m" id="card-m"></div><div class="tags" id="card-t"></div><span class="q r">”</span><div class="deco" id="card-deco"></div></div>
+  <div id="card"><span class="q l">“</span><div class="m" id="card-m"></div><div class="who" id="card-w"></div><div class="tags" id="card-t"></div><span class="q r">”</span><div class="deco" id="card-deco"></div></div>
 
   <div class="verse">One generation commends your works to another;<br>they tell of your mighty acts. <b>Psalm 145:4</b></div>
   <div class="qr" id="qr"><div class="code" id="qrcode"></div></div>
@@ -321,7 +323,7 @@
   }
 
   // ---------- 一則祝福進場 ----------
-  const card = document.getElementById('card'), cardM = document.getElementById('card-m'), cardT = document.getElementById('card-t');
+  const card = document.getElementById('card'), cardM = document.getElementById('card-m'), cardT = document.getElementById('card-t'), cardW = document.getElementById('card-w');
   document.getElementById('card-deco').innerHTML = IM15Art.dandelion({ stems: 12, color: '#E95B21', heart: '#F4ECE3', star: '#2C663A' });
   const wait = ms => new Promise(r => setTimeout(r, ms));
   const easeInOut = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
@@ -362,6 +364,7 @@
     // 2. 卡片打開
     cardM.textContent = item.msg || tags.join('、');
     cardM.classList.toggle('long', (item.msg || '').length > 22);
+    cardW.textContent = item.who ? '— ' + item.who : '';  // 補位與匿名祝福沒有 who，不顯示
     cardT.innerHTML = '';
     tags.filter(t => t !== item.msg).slice(0, 4).forEach(t => { const s = document.createElement('span'); s.textContent = t; cardT.appendChild(s); });
     card.style.transition = ''; card.classList.remove('leave');
@@ -431,12 +434,12 @@
     ['（示範）好開心', '喜樂'], ['（示範）謝謝小家', '陪伴'], ['（示範）神真好', '信實'], ['（示範）繼續長大', '成長'],
   ].map((r, i) => ({ id: 'f' + i, msg: r[0], tags: r[1].split('、') }));
   const DEMO_REAL = [
-    ['（示範）iM 生日快樂！謝謝這個家一直都在', ['恩典', '生日快樂']], ['（示範）謝謝松牧師和所有同工，辛苦了！', ['陪伴', '辛苦了']],
+    ['（示範）iM 生日快樂！謝謝這個家一直都在', ['恩典', '生日快樂'], '王小明'], ['（示範）謝謝松牧師和所有同工，辛苦了！', ['陪伴', '辛苦了']],
     ['', ['家', '我愛這個家']], ['（示範）下一個 15 年，我們也要一起走', ['盼望', '一起走下一個15年']],
   ];
   function demoData() {
     if (!firstLoad && demoN < DEMO_REAL.length && Math.random() < .5) {
-      const r = DEMO_REAL[demoN++]; demoItems.push({ id: 'd' + demoN, msg: r[0], tags: r[1] });
+      const r = DEMO_REAL[demoN++]; demoItems.push({ id: 'd' + demoN, msg: r[0], tags: r[1], who: r[2] || '' });
     }
     return Promise.resolve({ ok: true, items: demoItems.slice(), fill: DEMO_FILL });
   }

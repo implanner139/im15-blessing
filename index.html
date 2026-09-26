@@ -77,6 +77,15 @@
   }
   input:focus, textarea:focus { border-color: var(--green); box-shadow: 0 0 0 4px rgba(44,102,58,.12); }
   .hint { font-size: 12.5px; color: var(--ink-2); margin-top: 6px; }
+  .anon { display: flex; align-items: center; gap: 10px; margin-top: 10px; cursor: pointer; user-select: none; }
+  .anon input { position: absolute; opacity: 0; pointer-events: none; }
+  .anon .box { flex: none; width: 24px; height: 24px; border-radius: 7px; border: 1.5px solid var(--line); background: #fff; position: relative; transition: background .18s, border-color .18s; }
+  .anon .box::after { content: ""; position: absolute; left: 7px; top: 3px; width: 6px; height: 11px; border: solid #fff; border-width: 0 2.5px 2.5px 0; transform: rotate(45deg); opacity: 0; }
+  .anon input:checked + .box { background: var(--green); border-color: var(--green); }
+  .anon input:checked + .box::after { opacity: 1; }
+  .anon input:focus-visible + .box { box-shadow: 0 0 0 4px rgba(44,102,58,.18); }
+  .anon .txt { font-size: 15px; line-height: 1.35; }
+  .anon .txt small { display: block; font-size: 12.5px; color: var(--ink-2); }
   .err { color: #B3401A; font-size: 13px; margin-top: 6px; display: none; }
   .field.bad .err { display: block; }
   .field.bad input { border-color: #D2693F; }
@@ -170,7 +179,7 @@
           <div class="field" id="f-name">
             <label class="f" for="name">姓名</label>
             <input type="text" id="name" name="name" maxlength="40" autocomplete="name" placeholder="你的名字">
-            <div class="hint">放心，名字不會公開，大膽寫、不要害羞 😊</div>
+            <label class="anon"><input type="checkbox" id="anon"><span class="box"></span><span class="txt">我想匿名<small>勾選後就不會出現你的名字</small></span></label>
             <div class="err">請留下你的名字</div>
           </div>
           <div class="field" id="f-email">
@@ -348,7 +357,7 @@
   async function submit() {
     const payload = {
       name: $('#name').value.trim(), email: $('#email').value.trim(),
-      role: state.role[0] || '', words: state.words, say: state.say,
+      role: state.role[0] || '', words: state.words, say: state.say, anon: $('#anon').checked,
       msg: msg.value.trim(), hp: document.querySelector('.hp').value,
     };
     if (!payload.msg && !payload.words.length && !payload.say.length) { $('#f-msg').classList.add('bad'); return; }
