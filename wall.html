@@ -134,7 +134,7 @@
   <div class="status" id="status"></div>
   <div id="black"></div>
 </div>
-<div class="help" id="help">F 全螢幕　Q 顯示/隱藏 QR Code　空白鍵 暫停/繼續　C 開始倒數　X 取消倒數　H 關閉說明</div>
+<div class="help" id="help">F 全螢幕　Q 顯示/隱藏 QR Code　空白鍵 暫停/繼續　Z 開始倒數　H 關閉說明</div>
 
 <script src="config.js"></script>
 <script src="shared.js"></script>
@@ -151,10 +151,10 @@
   try {
     const token = params.get('reset');
     if (STORE.endsWith('-demo')) localStorage.removeItem(STORE);
-    else if (token && localStorage.getItem(STORE + '-reset') !== token) {
+    if (token && localStorage.getItem(STORE + '-reset') !== token) {
       localStorage.removeItem(STORE);
       localStorage.setItem(STORE + '-reset', token);
-      localStorage.removeItem('im15-countdown');
+      localStorage.removeItem('im15-countdown');  // 換新代號也會清掉倒數
     }
   } catch (e) {}
 
@@ -472,7 +472,7 @@
 
 
   // ---------- 倒數 ----------
-  // 鍵盤 C：開始倒數（預設 5 分鐘，網址加 &min= 可改）；鍵盤 X：取消倒數、回到祝福牆
+  // 鍵盤 Z：開始倒數（預設 5 分鐘，網址加 &min= 可改）；倒數中再按不會重來
   // 倒數狀態存在這台電腦，重新整理會接著倒數；換新的 reset 代號會一併清掉
   // 也保留網址方式：&end=代號（第一次載入時開始）或 &end=14:00（倒數到指定時間）
   const CD_KEY = 'im15-countdown';
@@ -517,18 +517,10 @@
     try { localStorage.setItem(CD_KEY, endAt); } catch (e) {}
     runCountdown(endAt);
   }
-  function cancelCountdown() {
-    try { localStorage.removeItem(CD_KEY); } catch (e) {}
-    clearInterval(cdTimer);
-    cdBox.classList.remove('on', 'last');
-    black.classList.remove('now', 'on');
-    stage.classList.remove('counting');
-  }
   addEventListener('keydown', e => {
     if (e.repeat) return;
     const k = e.key.toLowerCase();
-    if (k === 'c') startCountdown();
-    if (k === 'x') cancelCountdown();
+    if (k === 'z') startCountdown();
   });
   (function initCountdown() {
     const end = params.get('end');
