@@ -549,11 +549,14 @@
 
   // ---------- 開始 ----------
   if (document.fonts) document.fonts.addEventListener('loadingdone', relayout);
-  const warm = AMBIENT.concat(VOCAB).join('') + '已收到則祝福掃描送上';
-  (document.fonts ? document.fonts.load('700 40px "Noto Serif TC"', warm).catch(() => {}) : Promise.resolve()).then(() => {
+  // 不等字型：先用上次的資料立刻畫出累積數和文字雲（字型載入後會自動重排）
+  (function () {
     let cached = null;
     if (!DEMO) { try { cached = JSON.parse(localStorage.getItem(CACHE) || 'null'); } catch (e) {} }
     if (cached && cached.ok) poll(cached);
+  })();
+  const warm = AMBIENT.concat(VOCAB).join('') + '已收到則祝福掃描送上';
+  (document.fonts ? document.fonts.load('700 40px "Noto Serif TC"', warm).catch(() => {}) : Promise.resolve()).then(() => {
     poll();
     setInterval(() => poll(), C.POLL_SECONDS * 1000);
   });
