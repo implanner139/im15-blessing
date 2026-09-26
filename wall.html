@@ -88,6 +88,23 @@
   .status { position: absolute; z-index: 3; left: 18px; bottom: 16px; width: 9px; height: 9px; border-radius: 50%; background: #8a8; opacity: .5; }
   .status.bad { background: #c33; opacity: .9; }
   .demo { position: absolute; z-index: 9; left: 50%; top: 14px; transform: translateX(-50%); background: var(--ink); color: #fff; font: 18px var(--sans); padding: 6px 18px; border-radius: 99px; opacity: .8; }
+
+  /* 倒數 */
+  #veil { position: absolute; inset: 0; z-index: 4; background: rgba(188,168,145,.84); opacity: 0; transition: opacity 2.5s ease; pointer-events: none; }
+  #stage.counting #veil { opacity: 1; }
+  #countdown { position: absolute; z-index: 7; left: 50%; top: 41%; transform: translate(-50%, -50%) scale(.92); opacity: 0; transition: opacity 1.6s ease, transform 1.6s ease; text-align: center; pointer-events: none; }
+  #countdown.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  #countdown .lab { font-family: var(--serif); font-weight: 700; font-size: 46px; letter-spacing: .32em; color: var(--green); margin-bottom: 6px; padding-left: .32em; }
+  #countdown .num { font-family: var(--latin); font-weight: 400; font-size: 300px; line-height: 1; color: var(--green); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+  #countdown.last .num { color: var(--orange); }
+  #countdown .num.beat { animation: beat .9s ease; }
+  @keyframes beat { 20% { transform: scale(1.06); } }
+  #stage.counting #card { top: 80%; }
+  #stage.counting #card.show { transform: translate(-50%, -50%) scale(.72); }
+  #stage.counting .qr { z-index: 6; }
+  #black { position: absolute; inset: 0; z-index: 30; background: #000; opacity: 0; transition: opacity 5s ease-in; pointer-events: none; }
+  #black.on { opacity: 1; }
+  #black.now { transition: none; }
   .help { position: fixed; z-index: 99; right: 14px; top: 14px; background: rgba(0,0,0,.72); color: #fff; font: 14px/1.7 var(--sans); padding: 10px 14px; border-radius: 10px; display: none; }
   .help.on { display: block; }
 </style>
@@ -108,11 +125,14 @@
 
   <div id="cloud"></div>
 
+  <div id="veil"></div>
+  <div id="countdown"><div class="lab">慶典即將開始</div><div class="num" id="cd-num">05:00</div></div>
   <div id="card"><span class="q l">“</span><div class="m" id="card-m"></div><div class="who" id="card-w"></div><div class="tags" id="card-t"></div><span class="q r">”</span><div class="deco" id="card-deco"></div></div>
 
   <div class="verse">One generation commends your works to another;<br>they tell of your mighty acts. <b>Psalm 145:4</b></div>
   <div class="qr" id="qr"><div class="code" id="qrcode"></div></div>
   <div class="status" id="status"></div>
+  <div id="black"></div>
 </div>
 <div class="help" id="help">F 全螢幕　Q 顯示/隱藏 QR Code　空白鍵 暫停/繼續　H 關閉說明</div>
 
@@ -326,6 +346,7 @@
   const card = document.getElementById('card'), cardM = document.getElementById('card-m'), cardT = document.getElementById('card-t'), cardW = document.getElementById('card-w');
   document.getElementById('card-deco').innerHTML = IM15Art.dandelion({ stems: 12, color: '#E95B21', heart: '#F4ECE3', star: '#2C663A' });
   const wait = ms => new Promise(r => setTimeout(r, ms));
+  const cardCY = () => stage.classList.contains('counting') ? H * .80 : H * .52;
   const easeInOut = t => t < .5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
   function flySeed(from, to, ms) {
@@ -360,7 +381,7 @@
     // 1. 種子從畫面邊緣飄進來
     const edge = Math.floor(Math.random() * 3);
     const from = edge === 0 ? { x: -60, y: rnd(300, 900) } : edge === 1 ? { x: W + 60, y: rnd(300, 700) } : { x: rnd(300, 1500), y: H + 80 };
-    await flySeed(from, { x: W / 2, y: H * .52 }, 1500);
+    await flySeed(from, { x: W / 2, y: cardCY() }, 1500);
     // 2. 卡片打開
     cardM.textContent = item.msg || tags.join('、');
     cardM.classList.toggle('long', (item.msg || '').length > 22);
@@ -371,7 +392,7 @@
     card.style.transform = '';
     cloudEl.classList.add('dim');
     card.classList.add('show');
-    burst(W / 2, H * .52, 10);
+    burst(W / 2, cardCY(), 10);
     const len = (item.msg || '').length;
     let hold = Math.min(7500, 3600 + len * 90);
     if (queue.length > 2) hold = Math.min(hold, 3400);
@@ -385,7 +406,7 @@
     const target = tags.map(t => words.get(t)).find(o => o && o.el && o.x != null) || null;
     const tx = target ? target.x : CX, ty = target ? target.y : CY;
     card.classList.add('leave');
-    card.style.transform = `translate(calc(-50% + ${tx - W / 2}px), calc(-50% + ${ty - H * .52}px)) scale(.08)`;
+    card.style.transform = `translate(calc(-50% + ${tx - W / 2}px), calc(-50% + ${ty - cardCY()}px)) scale(.08)`;
     cloudEl.classList.remove('dim');
     await wait(700);
     card.classList.remove('show');
@@ -447,6 +468,50 @@
     const d = document.createElement('div'); d.className = 'demo'; d.textContent = '示範模式：尚未連接試算表（按 H 看操作說明）'; stage.appendChild(d);
     C.IDLE_SECONDS = Math.min(C.IDLE_SECONDS, 4);
   }
+
+
+  // ---------- 倒數 ----------
+  // ?end=代號：第一次看到這個代號時開始倒數（預設 5 分鐘，可用 &min= 改），重新整理會接著倒數，不會重來
+  // ?end=14:00：倒數到指定時間
+  (function countdown() {
+    const end = params.get('end');
+    if (!end) return;
+    let endAt;
+    const hm = end.match(/^(\d{1,2}):(\d{2})$/);
+    if (hm) {
+      const d = new Date(); d.setHours(+hm[1], +hm[2], 0, 0); endAt = d.getTime();
+    } else {
+      const mins = parseFloat(params.get('min')) || 5, key = 'im15-end-' + end;
+      let start = null;
+      try { start = +localStorage.getItem(key) || null; if (!start) { start = Date.now(); localStorage.setItem(key, start); } } catch (e) { start = Date.now(); }
+      endAt = start + mins * 60000;
+    }
+    const box = document.getElementById('countdown'), num = document.getElementById('cd-num'), black = document.getElementById('black');
+    const pad = n => String(n).padStart(2, '0');
+    let last = '', finished = false;
+    if (Date.now() - endAt > 6000) { // 已經倒數完才重新載入：直接黑畫面
+      stage.classList.add('counting'); black.classList.add('now', 'on'); return;
+    }
+    stage.classList.add('counting');
+    requestAnimationFrame(() => box.classList.add('on'));
+    const t = setInterval(() => {
+      const rem = endAt - Date.now();
+      if (rem <= 0) {
+        if (finished) return; finished = true; clearInterval(t);
+        num.textContent = '00:00';
+        setTimeout(() => box.classList.remove('on'), 800);   // 數字淡出
+        setTimeout(() => black.classList.add('on'), 1800);   // 慢慢變黑
+        return;
+      }
+      const sec = Math.ceil(rem / 1000), h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), ss = sec % 60;
+      const txt = h ? `${h}:${pad(m)}:${pad(ss)}` : `${pad(m)}:${pad(ss)}`;
+      if (txt !== last) {
+        last = txt; num.textContent = txt;
+        box.classList.toggle('last', sec <= 10);
+        if (sec <= 10) { num.classList.remove('beat'); void num.offsetWidth; num.classList.add('beat'); }
+      }
+    }, 200);
+  })();
 
   // ---------- 開始 ----------
   if (document.fonts) document.fonts.addEventListener('loadingdone', relayout);
