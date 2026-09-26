@@ -125,7 +125,15 @@
   const stage = document.getElementById('stage'), cloudEl = document.getElementById('cloud');
   const params = new URLSearchParams(location.search);
   const STORE = 'im15-wall-v1' + (window.IM15 && window.IM15.SCRIPT_URL ? '' : '-demo');
-  if (params.has('reset') || STORE.endsWith('-demo')) { try { localStorage.removeItem(STORE); } catch (e) {} history.replaceState(null, '', location.pathname); }
+  // ?reset=代號：同一個代號只會歸零一次，網址留著也不會每次重新整理都歸零（vMix 等會自動重載的情況）
+  try {
+    const token = params.get('reset');
+    if (STORE.endsWith('-demo')) localStorage.removeItem(STORE);
+    else if (token && localStorage.getItem(STORE + '-reset') !== token) {
+      localStorage.removeItem(STORE);
+      localStorage.setItem(STORE + '-reset', token);
+    }
+  } catch (e) {}
 
   // ---------- 版面縮放 ----------
   function fit() {
