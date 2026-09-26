@@ -472,7 +472,7 @@
 
 
   // ---------- 倒數 ----------
-  // 鍵盤 Z：開始倒數（預設 5 分鐘，網址加 &min= 可改）；倒數中再按不會重來
+  // 鍵盤 Z 或網址加 #go：開始倒數（預設 5 分鐘，網址加 &min= 可改）；開始過就不會重來
   // 倒數狀態存在這台電腦，重新整理會接著倒數；換新的 reset 代號會一併清掉
   // 也保留網址方式：&end=代號（第一次載入時開始）或 &end=14:00（倒數到指定時間）
   const CD_KEY = 'im15-countdown';
@@ -512,7 +512,7 @@
   function startCountdown() {
     let endAt;
     try { endAt = +localStorage.getItem(CD_KEY) || 0; } catch (e) {}
-    if (endAt && endAt > Date.now()) return;           // 已經在倒數：不重來
+    if (endAt) return;                                 // 已經開始過（倒數中或已結束）：不重來
     endAt = Date.now() + cdMinutes() * 60000;
     try { localStorage.setItem(CD_KEY, endAt); } catch (e) {}
     runCountdown(endAt);
@@ -522,6 +522,8 @@
     const k = e.key.toLowerCase();
     if (k === 'z') startCountdown();
   });
+  // vMix 快捷鍵 BrowserNavigate 到「同一個網址 + #go」：只改 # 後面，網頁不重新載入，直接開始倒數
+  addEventListener('hashchange', () => { if (location.hash.toLowerCase() === '#go') startCountdown(); });
   (function initCountdown() {
     const end = params.get('end');
     if (end) {
@@ -538,6 +540,7 @@
     let saved = 0;
     try { saved = +localStorage.getItem(CD_KEY) || 0; } catch (e) {}
     if (saved) runCountdown(saved);
+    else if (location.hash.toLowerCase() === '#go') startCountdown();
   })();
 
   // ---------- 開始 ----------
