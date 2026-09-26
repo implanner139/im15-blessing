@@ -537,7 +537,11 @@
     }
     let saved = 0;
     try { saved = +localStorage.getItem(CD_KEY) || 0; } catch (e) {}
-    if (saved) runCountdown(saved);
+    if (saved) {
+      // 按 Z 開始的倒數：結束後重新整理就回到正常祝福牆
+      if (Date.now() - saved > 6000) { try { localStorage.removeItem(CD_KEY); } catch (e) {} }
+      else runCountdown(saved);
+    }
   })();
 
   // ---------- 開始 ----------
