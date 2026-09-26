@@ -16,7 +16,7 @@
   body.idle { cursor: none; }
   #stage {
     position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px; transform-origin: center center; transform: translate(-50%, -50%);
-    background: var(--paper) url(assets/wall_bg.jpg) center / cover; overflow: hidden; color: var(--ink);
+    background: var(--paper) url(assets/wall_bg_clean.jpg) center / cover; overflow: hidden; color: var(--ink);
   }
   .blob { position: absolute; border-radius: 50%; background: var(--orange); filter: blur(90px); opacity: .62; pointer-events: none; }
   .blob.a { width: 760px; height: 300px; top: -150px; right: 180px; }
@@ -30,7 +30,7 @@
   .brand img { height: 92px; display: block; }
   .brand .t { color: var(--cream); font-size: 26px; letter-spacing: .55em; padding-bottom: 8px; }
   .brand .t small { display: block; font-family: var(--latin); font-weight: 300; font-size: 22px; letter-spacing: .04em; margin-top: 6px; }
-  .counter { text-align: right; font-family: var(--serif); color: var(--green); padding-bottom: 4px; }
+  .counter { text-align: right; font-family: var(--serif); color: var(--green); background: var(--cream); border-radius: 26px; padding: 12px 34px 14px; box-shadow: 0 18px 40px -22px rgba(58,48,39,.7); }
   .counter .lab { font-size: 26px; font-weight: 600; letter-spacing: .12em; }
   .counter .n { font-family: var(--latin); font-weight: 500; font-size: 84px; line-height: 1; margin: 0 10px; display: inline-block; min-width: 1.2em; text-align: center; color: var(--orange); }
   .counter .n.tick { animation: tick .7s ease; }
@@ -76,7 +76,7 @@
   @keyframes drifter { from { transform: translate(0, 0) rotate(var(--r0)); } to { transform: translate(var(--dx), var(--dy)) rotate(var(--r1)); } }
 
   /* QR */
-  .qr { position: absolute; z-index: 3; right: 64px; bottom: 56px; width: 248px; background: var(--cream); border-radius: 26px; padding: 20px 20px 16px; text-align: center; box-shadow: 0 18px 40px -22px rgba(58,48,39,.7); transition: opacity .5s; }
+  .qr { position: absolute; z-index: 3; right: 90px; bottom: 60px; background: var(--cream); border-radius: 26px; padding: 22px; box-shadow: 0 18px 40px -22px rgba(58,48,39,.7); transition: opacity .5s; }
   .qr.off { opacity: 0; }
   .qr .code svg { width: 208px; height: 208px; display: block; }
   .qr .cap { font-family: var(--serif); font-weight: 700; color: var(--green); font-size: 25px; margin-top: 10px; letter-spacing: .1em; }
@@ -109,7 +109,7 @@
   <div id="card"><span class="q l">“</span><div class="m" id="card-m"></div><div class="tags" id="card-t"></div><span class="q r">”</span><div class="deco" id="card-deco"></div></div>
 
   <div class="verse">One generation commends your works to another;<br>they tell of your mighty acts. <b>Psalm 145:4</b></div>
-  <div class="qr" id="qr"><div class="code" id="qrcode"></div><div class="cap">掃描送上祝福<small>寫下你給 iM 的一句話</small></div></div>
+  <div class="qr" id="qr"><div class="code" id="qrcode"></div></div>
   <div class="status" id="status"></div>
 </div>
 <div class="help" id="help">F 全螢幕　Q 顯示/隱藏 QR Code　空白鍵 暫停/繼續　H 關閉說明</div>
@@ -162,7 +162,7 @@
 
   // ---------- 排版 ----------
   const ctx = document.createElement('canvas').getContext('2d');
-  const OBST = [{ x: 60, y: 30, w: 1800, h: 150 }, { x: 1640, y: 760, w: 300, h: 330 }, { x: 60, y: 960, w: 820, h: 120 }];
+  const OBST = [{ x: 60, y: 30, w: 1800, h: 160 }, { x: 1640, y: 790, w: 300, h: 300 }, { x: 60, y: 960, w: 820, h: 120 }];
   const AREA = { x: 80, y: 190, w: 1760, h: 780 };
   const CX = 940, CY = 575;
   const PALETTE = ['#2C663A', '#E95B21', '#5B4636', '#2C663A', '#B8481A', '#3E7A4C'];
@@ -226,7 +226,7 @@
       o.el.classList.toggle('v', !!o.v);
       o.el.style.left = o._r.x + 'px'; o.el.style.top = o._r.y + 'px'; o.el.style.fontSize = o._fs + 'px';
       const hot = o.w > 0;
-      o.el.style.color = hot ? (rank < 3 ? '#2C663A' : PALETTE[rank % PALETTE.length]) : 'rgba(91,70,54,.62)';
+      o.el.style.color = hot ? (rank < 3 ? '#2C663A' : PALETTE[rank % PALETTE.length]) : 'rgba(91,70,54,.8)';
       if (hot) rank++;
       o.el.classList.add('in');
     });
