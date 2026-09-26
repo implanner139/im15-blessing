@@ -90,10 +90,10 @@
   .demo { position: absolute; z-index: 9; left: 50%; top: 14px; transform: translateX(-50%); background: var(--ink); color: #fff; font: 18px var(--sans); padding: 6px 18px; border-radius: 99px; opacity: .8; }
 
   /* 倒數 */
-  #veil { position: absolute; inset: 0; z-index: 4; background: rgba(188,168,145,.84); opacity: 0; transition: opacity 2.5s ease; pointer-events: none; }
+  #veil { position: absolute; inset: 0; z-index: 4; background: rgba(188,168,145,.84); opacity: 0; transition: opacity 3.5s ease; pointer-events: none; }
   #stage.counting #veil { opacity: 1; }
-  #countdown { position: absolute; z-index: 7; left: 50%; top: 41%; transform: translate(-50%, -50%) scale(.92); opacity: 0; transition: opacity 1.6s ease, transform 1.6s ease; text-align: center; pointer-events: none; }
-  #countdown.on { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  #countdown { position: absolute; z-index: 7; left: 50%; top: 41%; transform: translate(-50%, calc(-50% + 24px)); opacity: 0; filter: blur(14px); transition: opacity 3.5s ease, transform 3.5s cubic-bezier(.2,.7,.2,1), filter 3.5s ease; text-align: center; pointer-events: none; }
+  #countdown.on { opacity: 1; transform: translate(-50%, -50%); filter: blur(0); }
   #countdown .lab { font-family: var(--serif); font-weight: 700; font-size: 46px; letter-spacing: .32em; color: var(--green); margin-bottom: 6px; padding-left: .32em; }
   #countdown .num { font-family: var(--latin); font-weight: 400; font-size: 300px; line-height: 1; color: var(--green); font-variant-numeric: tabular-nums; letter-spacing: .02em; }
   #countdown.last .num { color: var(--orange); }
@@ -134,7 +134,7 @@
   <div class="status" id="status"></div>
   <div id="black"></div>
 </div>
-<div class="help" id="help">F 全螢幕　Q 顯示/隱藏 QR Code　空白鍵 暫停/繼續　H 關閉說明</div>
+<div class="help" id="help">F 全螢幕　Q 顯示/隱藏 QR Code　空白鍵 暫停/繼續　C 開始倒數　X 取消倒數　H 關閉說明</div>
 
 <script src="config.js"></script>
 <script src="shared.js"></script>
@@ -154,6 +154,7 @@
     else if (token && localStorage.getItem(STORE + '-reset') !== token) {
       localStorage.removeItem(STORE);
       localStorage.setItem(STORE + '-reset', token);
+      localStorage.removeItem('im15-countdown');
     }
   } catch (e) {}
 
@@ -471,46 +472,80 @@
 
 
   // ---------- 倒數 ----------
-  // ?end=代號：第一次看到這個代號時開始倒數（預設 5 分鐘，可用 &min= 改），重新整理會接著倒數，不會重來
-  // ?end=14:00：倒數到指定時間
-  (function countdown() {
-    const end = params.get('end');
-    if (!end) return;
-    let endAt;
-    const hm = end.match(/^(\d{1,2}):(\d{2})$/);
-    if (hm) {
-      const d = new Date(); d.setHours(+hm[1], +hm[2], 0, 0); endAt = d.getTime();
-    } else {
-      const mins = parseFloat(params.get('min')) || 5, key = 'im15-end-' + end;
-      let start = null;
-      try { start = +localStorage.getItem(key) || null; if (!start) { start = Date.now(); localStorage.setItem(key, start); } } catch (e) { start = Date.now(); }
-      endAt = start + mins * 60000;
-    }
-    const box = document.getElementById('countdown'), num = document.getElementById('cd-num'), black = document.getElementById('black');
-    const pad = n => String(n).padStart(2, '0');
-    let last = '', finished = false;
+  // 鍵盤 C：開始倒數（預設 5 分鐘，網址加 &min= 可改）；鍵盤 X：取消倒數、回到祝福牆
+  // 倒數狀態存在這台電腦，重新整理會接著倒數；換新的 reset 代號會一併清掉
+  // 也保留網址方式：&end=代號（第一次載入時開始）或 &end=14:00（倒數到指定時間）
+  const CD_KEY = 'im15-countdown';
+  const cdBox = document.getElementById('countdown'), cdNum = document.getElementById('cd-num'), black = document.getElementById('black');
+  const pad = n => String(n).padStart(2, '0');
+  let cdTimer = null, cdLast = '', cdDone = false;
+  const cdMinutes = () => parseFloat(params.get('min')) || 5;
+
+  function runCountdown(endAt) {
+    clearInterval(cdTimer); cdLast = ''; cdDone = false;
+    black.classList.remove('now', 'on');
     if (Date.now() - endAt > 6000) { // 已經倒數完才重新載入：直接黑畫面
       stage.classList.add('counting'); black.classList.add('now', 'on'); return;
     }
-    stage.classList.add('counting');
-    requestAnimationFrame(() => box.classList.add('on'));
-    const t = setInterval(() => {
+    const render = () => {
       const rem = endAt - Date.now();
       if (rem <= 0) {
-        if (finished) return; finished = true; clearInterval(t);
-        num.textContent = '00:00';
-        setTimeout(() => box.classList.remove('on'), 800);   // 數字淡出
-        setTimeout(() => black.classList.add('on'), 1800);   // 慢慢變黑
+        if (cdDone) return; cdDone = true; clearInterval(cdTimer);
+        cdNum.textContent = '00:00';
+        setTimeout(() => cdBox.classList.remove('on'), 800);   // 數字淡出
+        setTimeout(() => black.classList.add('on'), 2200);     // 慢慢變黑
         return;
       }
       const sec = Math.ceil(rem / 1000), h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), ss = sec % 60;
       const txt = h ? `${h}:${pad(m)}:${pad(ss)}` : `${pad(m)}:${pad(ss)}`;
-      if (txt !== last) {
-        last = txt; num.textContent = txt;
-        box.classList.toggle('last', sec <= 10);
-        if (sec <= 10) { num.classList.remove('beat'); void num.offsetWidth; num.classList.add('beat'); }
+      if (txt !== cdLast) {
+        cdLast = txt; cdNum.textContent = txt;
+        cdBox.classList.toggle('last', sec <= 10);
+        if (sec <= 10) { cdNum.classList.remove('beat'); void cdNum.offsetWidth; cdNum.classList.add('beat'); }
       }
-    }, 200);
+    };
+    render();
+    stage.classList.add('counting');
+    void cdBox.offsetWidth; setTimeout(() => cdBox.classList.add('on'), 60);
+    cdTimer = setInterval(render, 200);
+  }
+  function startCountdown() {
+    let endAt;
+    try { endAt = +localStorage.getItem(CD_KEY) || 0; } catch (e) {}
+    if (endAt && endAt > Date.now()) return;           // 已經在倒數：不重來
+    endAt = Date.now() + cdMinutes() * 60000;
+    try { localStorage.setItem(CD_KEY, endAt); } catch (e) {}
+    runCountdown(endAt);
+  }
+  function cancelCountdown() {
+    try { localStorage.removeItem(CD_KEY); } catch (e) {}
+    clearInterval(cdTimer);
+    cdBox.classList.remove('on', 'last');
+    black.classList.remove('now', 'on');
+    stage.classList.remove('counting');
+  }
+  addEventListener('keydown', e => {
+    if (e.repeat) return;
+    const k = e.key.toLowerCase();
+    if (k === 'c') startCountdown();
+    if (k === 'x') cancelCountdown();
+  });
+  (function initCountdown() {
+    const end = params.get('end');
+    if (end) {
+      let endAt;
+      const hm = end.match(/^(\d{1,2}):(\d{2})$/);
+      if (hm) { const d = new Date(); d.setHours(+hm[1], +hm[2], 0, 0); endAt = d.getTime(); }
+      else {
+        const key = 'im15-end-' + end; let st = null;
+        try { st = +localStorage.getItem(key) || null; if (!st) { st = Date.now(); localStorage.setItem(key, st); } } catch (e) { st = Date.now(); }
+        endAt = st + cdMinutes() * 60000;
+      }
+      return runCountdown(endAt);
+    }
+    let saved = 0;
+    try { saved = +localStorage.getItem(CD_KEY) || 0; } catch (e) {}
+    if (saved) runCountdown(saved);
   })();
 
   // ---------- 開始 ----------
