@@ -292,9 +292,12 @@
     const res = await fetch(C.SCRIPT_URL + (C.SCRIPT_URL.includes('?') ? '&' : '?') + 't=' + Date.now());
     return res.json();
   }
-  async function poll() {
+  // 上一次抓到的資料存在這台電腦：重新載入時先用它畫出畫面，不會先閃 0 或空的文字雲
+  const CACHE = 'im15-wall-cache';
+  async function poll(pre) {
     try {
-      const data = await load();
+      const data = pre || await load();
+      if (!pre && !DEMO && data && data.ok) { try { localStorage.setItem(CACHE, JSON.stringify(data)); } catch (e) {} }
       document.getElementById('status').classList.remove('bad');
       if (!data || !data.ok) throw new Error('bad');
       fill = data.fill || fill;
@@ -548,8 +551,11 @@
   if (document.fonts) document.fonts.addEventListener('loadingdone', relayout);
   const warm = AMBIENT.concat(VOCAB).join('') + '已收到則祝福掃描送上';
   (document.fonts ? document.fonts.load('700 40px "Noto Serif TC"', warm).catch(() => {}) : Promise.resolve()).then(() => {
+    let cached = null;
+    if (!DEMO) { try { cached = JSON.parse(localStorage.getItem(CACHE) || 'null'); } catch (e) {} }
+    if (cached && cached.ok) poll(cached);
     poll();
-    setInterval(poll, C.POLL_SECONDS * 1000);
+    setInterval(() => poll(), C.POLL_SECONDS * 1000);
   });
 })();
 </script>
