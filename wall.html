@@ -520,7 +520,7 @@
   addEventListener('keydown', e => {
     if (e.repeat) return;
     const k = e.key.toLowerCase();
-    if (k === 'z') startCountdown();
+    if (k === 'z' || e.code === 'KeyZ') startCountdown();  // e.code：中文輸入法開著也認得
   });
   // vMix 快捷鍵 BrowserNavigate 到「同一個網址 + #go」：只改 # 後面，網頁不重新載入，直接開始倒數
   addEventListener('hashchange', () => { if (location.hash.toLowerCase() === '#go') startCountdown(); });
