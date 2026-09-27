@@ -536,7 +536,7 @@
       const hm = end.match(/^(\d{1,2}):(\d{2})$/);
       if (hm) { const d = new Date(); d.setHours(+hm[1], +hm[2], 0, 0); endAt = d.getTime(); }
       else {
-        const key = 'im15-end-' + end; let st = null;
+        const key = 'im15-end-' + end + '-' + cdMinutes(); let st = null;  // 改了 min 就重新倒數
         try { st = +localStorage.getItem(key) || null; if (!st) { st = Date.now(); localStorage.setItem(key, st); } } catch (e) { st = Date.now(); }
         endAt = st + cdMinutes() * 60000;
       }
