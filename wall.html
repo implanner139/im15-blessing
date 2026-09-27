@@ -92,6 +92,10 @@
   /* 倒數 */
   #veil { position: absolute; inset: 0; z-index: 4; background: rgba(188,168,145,.84); opacity: 0; transition: opacity 3.5s ease; pointer-events: none; }
   #stage.counting #veil { opacity: 1; }
+  /* 倒數時文字雲虛化，數字後面有柔光底，不會跟字疊在一起 */
+  #stage.counting #cloud, #stage.counting #cloud.dim { opacity: .3; filter: blur(7px); transition: opacity 3.5s ease, filter 3.5s ease; }
+  #countdown::before { content: ""; position: absolute; left: 50%; top: 50%; width: 1500px; height: 640px; transform: translate(-50%, -50%); z-index: -1;
+    background: radial-gradient(ellipse at center, rgba(214,199,180,.96) 0%, rgba(214,199,180,.85) 38%, rgba(214,199,180,0) 70%); }
   #countdown { position: absolute; z-index: 7; left: 50%; top: 41%; transform: translate(-50%, calc(-50% + 24px)); opacity: 0; filter: blur(14px); transition: opacity 3.5s ease, transform 3.5s cubic-bezier(.2,.7,.2,1), filter 3.5s ease; text-align: center; pointer-events: none; }
   #countdown.on { opacity: 1; transform: translate(-50%, -50%); filter: blur(0); }
   #countdown .lab { font-family: var(--serif); font-weight: 700; font-size: 46px; letter-spacing: .32em; color: var(--green); margin-bottom: 6px; padding-left: .32em; }
