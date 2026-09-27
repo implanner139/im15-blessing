@@ -336,10 +336,22 @@
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
 
   // ---------- 空檔：補位或重播 ----------
+  // 真實祝福輪流重播（每則都輪到一次才重來），讓開網頁之前就送出的祝福和名字也會上螢幕
+  let replayDeck = [];
+  function nextReal() {
+    if (!replayDeck.length) replayDeck = shuffle(Array.from(real.keys()));
+    while (replayDeck.length) { const it = real.get(replayDeck.shift()); if (it) return it; }
+    return null;
+  }
   function tickIdle() {
     if (busy || paused || queue.length || firstLoad) return;
     if (Date.now() - lastEnd < C.IDLE_SECONDS * 1000) return;
     const unused = fill.filter(f => !saved.fillUsed.includes(f.id));
+    // 優先播真實祝福：空檔時約 3/4 機會輪播真實祝福（可重複），其餘才用補位
+    if (realCount() && (Math.random() < (C.REAL_RATIO || .75) || !(realCount() < C.FILL_UNTIL && unused.length))) {
+      const it = nextReal();
+      if (it) { queue.push({ item: it, kind: 'replay' }); return; }
+    }
     if (realCount() < C.FILL_UNTIL && unused.length) {
       const f = unused[Math.floor(Math.random() * unused.length)];
       queue.push({ item: f, kind: 'fill' });
